@@ -157,7 +157,6 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-900">Padel Tracker</h1>
-              <p className="text-slate-500 text-xs font-medium">Competición 2024</p>
             </div>
           </div>
           
