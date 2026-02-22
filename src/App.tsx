@@ -157,7 +157,7 @@ export default function App() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-emerald-100">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 backdrop-blur-md bg-white/80">
-        <div className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+        <div className="w-full px-4 py-5 space-y-5">
           <div className="flex items-center gap-3">
             <div className="bg-emerald-500 p-2.5 rounded-2xl shadow-lg shadow-emerald-200/50">
               <Trophy className="text-white w-5 h-5" />
@@ -196,7 +196,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="w-full py-8">
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-sm font-medium">
             {error}
@@ -223,15 +223,35 @@ export default function App() {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white border-y border-slate-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Fecha / Hora</th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Club</th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Contrincantes</th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Resultado / Estado</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                      <div className="flex items-center gap-2">
+                        <Calendar size={12} className="text-slate-300" />
+                        Fecha / Hora
+                      </div>
+                    </th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                      <div className="flex items-center gap-2">
+                        <MapPin size={12} className="text-slate-300" />
+                        Club
+                      </div>
+                    </th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                      <div className="flex items-center gap-2">
+                        <Users size={12} className="text-slate-300" />
+                        Contrincantes
+                      </div>
+                    </th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                      <div className="flex items-center gap-2">
+                        <Trophy size={12} className="text-slate-300" />
+                        Resultado / Estado
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -253,38 +273,22 @@ export default function App() {
                       <td className="px-6 py-5 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-slate-700">
-                            {new Date(match.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })}
+                            {new Date(match.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
                           </span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                              {new Date(match.date).getFullYear()}
-                            </span>
-                            {match.time && (
-                              <>
-                                <span className="text-[10px] text-slate-300">•</span>
-                                <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
-                                  <Clock size={10} /> {match.time}
-                                </span>
-                              </>
-                            )}
-                          </div>
+                          {match.time && (
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
+                                <Clock size={10} /> {match.time}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                            <MapPin size={14} className="text-emerald-600" />
-                          </div>
-                          <span className="text-sm font-semibold text-slate-600">{match.club}</span>
-                        </div>
+                        <span className="text-sm font-semibold text-slate-600">{match.club}</span>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                            <Users size={14} className="text-indigo-600" />
-                          </div>
-                          <span className="text-sm font-semibold text-slate-600">{match.team}</span>
-                        </div>
+                        <span className="text-sm font-semibold text-slate-600">{match.team}</span>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex flex-col gap-1.5">
