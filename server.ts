@@ -1,21 +1,12 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import Database from "better-sqlite3";
+import { createClient } from "@supabase/supabase-js";
 import path from "path";
 
-const db = new Database("padel.db");
-
-// Initialize database
-db.exec(`
-  CREATE TABLE IF NOT EXISTS matches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date TEXT NOT NULL,
-    club TEXT NOT NULL,
-    team TEXT NOT NULL,
-    result TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function startServer() {
   const app = express();
@@ -24,20 +15,30 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
-  app.get("/api/matches", (req, res) => {
+  app.get("/api/matches", async (req, res) => {
     try {
-      const matches = db.prepare("SELECT * FROM matches ORDER BY date DESC").all();
-      res.json(matches);
+      const { data, error } = await supabase
+        .from("matches")
+        .select("*")
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      res.json(data);
     } catch (error) {
       console.error("Fetch error:", error);
       res.status(500).json({ error: "Error al obtener los partidos" });
     }
   });
 
-  app.delete("/api/matches/:id", (req, res) => {
+  app.delete("/api/matches/:id", async (req, res) => {
     const { id } = req.params;
     try {
-      db.prepare("DELETE FROM matches WHERE id = ?").run(id);
+      const { error } = await supabase
+        .from("matches")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
       res.status(200).json({ message: "Partido eliminado" });
     } catch (error) {
       console.error("Delete error:", error);
@@ -45,7 +46,7 @@ async function startServer() {
     }
   });
 
-  app.put("/api/matches/:id", (req, res) => {
+  app.put("/api/matches/:id", async (req, res) => {
     const { id } = req.params;
     const { date, club, team, result } = req.body;
     if (!date || !club || !team) {
@@ -53,28 +54,36 @@ async function startServer() {
     }
 
     try {
-      db.prepare(
-        "UPDATE matches SET date = ?, club = ?, team = ?, result = ? WHERE id = ?"
-      ).run(date, club, team, result, id);
-      res.status(200).json({ id, date, club, team, result });
+      const { data, error } = await supabase
+        .from("matches")
+        .update({ date, club, team, result })
+        .eq("id", id)
+        .select();
+
+      if (error) throw error;
+      res.status(200).json(data[0]);
     } catch (error) {
       console.error("Update error:", error);
       res.status(500).json({ error: "Error al actualizar el partido" });
     }
   });
 
-  app.post("/api/matches", (req, res) => {
+  app.post("/api/matches", async (req, res) => {
     const { date, club, team, result } = req.body;
     if (!date || !club || !team) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
-      const info = db.prepare(
-        "INSERT INTO matches (date, club, team, result) VALUES (?, ?, ?, ?)"
-      ).run(date, club, team, result);
-      res.status(201).json({ id: info.lastInsertRowid, date, club, team, result });
+      const { data, error } = await supabase
+        .from("matches")
+        .insert([{ date, club, team, result }])
+        .select();
+
+      if (error) throw error;
+      res.status(201).json(data[0]);
     } catch (error) {
+      console.error("Insert error:", error);
       res.status(500).json({ error: "Failed to save match" });
     }
   });
