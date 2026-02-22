@@ -1,0 +1,5 @@
+{
+  "name": "Padel Match Tracker",
+  "description": "Una aplicación para llevar el registro de tus partidos de pádel, incluyendo club, pareja y resultados.",
+  "requestFramePermissions": []
+}
