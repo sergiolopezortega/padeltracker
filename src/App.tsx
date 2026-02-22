@@ -27,7 +27,16 @@ export default function App() {
       const response = await fetch('/api/matches');
       if (!response.ok) throw new Error('Error al cargar datos');
       const data = await response.json();
-      setMatches(data);
+      
+      // Sort by proximity to current time
+      const now = new Date();
+      const sortedData = data.sort((a: any, b: any) => {
+        const dateA = new Date(`${a.date}${a.time ? `T${a.time}` : 'T00:00'}`).getTime();
+        const dateB = new Date(`${b.date}${b.time ? `T${b.time}` : 'T00:00'}`).getTime();
+        return Math.abs(dateA - now.getTime()) - Math.abs(dateB - now.getTime());
+      });
+
+      setMatches(sortedData);
       setError(null);
     } catch (err) {
       setError('No se pudieron cargar los partidos. Por favor, intenta de nuevo.');
@@ -163,7 +172,7 @@ export default function App() {
               <Trophy className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">Mariza Padel Tracker</h1>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">Liga Litoral - Mariza y Arancha</h1>
             </div>
           </div>
           

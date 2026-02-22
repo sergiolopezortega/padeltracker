@@ -20,7 +20,8 @@ async function startServer() {
       const { data, error } = await supabase
         .from("matches")
         .select("*")
-        .order("date", { ascending: false });
+        .order("date", { ascending: false })
+        .order("time", { ascending: false });
 
       if (error) throw error;
       res.json(data);
