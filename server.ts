@@ -36,7 +36,7 @@ async function startServer() {
       const { error } = await supabase
         .from("matches")
         .delete()
-        .eq("id", id);
+        .eq("id", parseInt(id));
 
       if (error) throw error;
       res.status(200).json({ message: "Partido eliminado" });
@@ -57,7 +57,7 @@ async function startServer() {
       const { data, error } = await supabase
         .from("matches")
         .update({ date, time, club, team, result, status })
-        .eq("id", id)
+        .eq("id", parseInt(id))
         .select();
 
       if (error) throw error;

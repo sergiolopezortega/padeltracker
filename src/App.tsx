@@ -163,7 +163,7 @@ export default function App() {
               <Trophy className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">Padel Tracker</h1>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">Mariza Padel Tracker</h1>
             </div>
           </div>
           
