@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Match } from './types';
 
@@ -14,9 +14,11 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Match>({
     date: new Date().toISOString().split('T')[0],
+    time: '',
     club: '',
     team: '',
     result: '',
+    status: 'Pendiente',
   });
 
   const fetchMatches = async () => {
@@ -70,12 +72,14 @@ export default function App() {
   };
 
   const handleEdit = (match: Match) => {
-    setEditingMatchId(match.id || null);
+    setEditingMatchId(match.id !== undefined ? match.id : null);
     setFormData({
       date: match.date,
+      time: match.time || '',
       club: match.club,
       team: match.team,
       result: match.result || '',
+      status: match.status || 'Pendiente',
     });
     setIsModalOpen(true);
   };
@@ -85,9 +89,11 @@ export default function App() {
     setEditingMatchId(null);
     setFormData({
       date: new Date().toISOString().split('T')[0],
+      time: '',
       club: '',
       team: '',
       result: '',
+      status: 'Pendiente',
     });
   };
 
@@ -139,6 +145,7 @@ export default function App() {
     try {
       const response = await fetch(`/api/matches/${id}`, { method: 'DELETE' });
       if (response.ok) {
+        handleCloseModal();
         fetchMatches();
       }
     } catch (error) {
@@ -221,10 +228,10 @@ export default function App() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Fecha</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Fecha / Hora</th>
                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Club</th>
                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Contrincantes</th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Resultado</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Resultado / Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -235,16 +242,32 @@ export default function App() {
                       transition={{ delay: idx * 0.05 }}
                       key={match.id}
                       onClick={() => handleEdit(match)}
-                      className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
+                      className={`group transition-colors cursor-pointer border-b border-slate-50 ${
+                        match.status === 'Ganado' 
+                          ? 'bg-emerald-50/60 hover:bg-emerald-100/60' 
+                          : match.status === 'Perdido' 
+                            ? 'bg-rose-50/60 hover:bg-rose-100/60' 
+                            : 'bg-white hover:bg-slate-50/50'
+                      }`}
                     >
                       <td className="px-6 py-5 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-slate-700">
                             {new Date(match.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                            {new Date(match.date).getFullYear()}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                              {new Date(match.date).getFullYear()}
+                            </span>
+                            {match.time && (
+                              <>
+                                <span className="text-[10px] text-slate-300">•</span>
+                                <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
+                                  <Clock size={10} /> {match.time}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-5">
@@ -264,13 +287,19 @@ export default function App() {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        {match.result ? (
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-500 text-white shadow-sm shadow-emerald-200">
-                            {match.result}
+                        <div className="flex flex-col gap-1.5">
+                          {match.result ? (
+                            <span className="inline-flex items-center w-fit px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white shadow-sm">
+                              {match.result}
+                            </span>
+                          ) : null}
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${
+                            match.status === 'Ganado' ? 'text-emerald-600' : 
+                            match.status === 'Perdido' ? 'text-rose-600' : 'text-slate-400'
+                          }`}>
+                            {match.status || 'Pendiente'}
                           </span>
-                        ) : (
-                          <span className="text-slate-300 italic text-xs font-medium">Pendiente</span>
-                        )}
+                        </div>
                       </td>
                     </motion.tr>
                   ))}
@@ -457,17 +486,48 @@ export default function App() {
 
               <form onSubmit={handleSubmit} className="p-10 pt-8 space-y-6">
                 <div className="grid grid-cols-1 gap-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2.5 ml-1">Fecha</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
+                        <input
+                          type="date"
+                          required
+                          value={formData.date}
+                          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                          className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-slate-50/50 font-medium text-slate-700"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2.5 ml-1">Hora</label>
+                      <div className="relative">
+                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
+                        <input
+                          type="time"
+                          lang="es-ES"
+                          value={formData.time}
+                          onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                          className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-slate-50/50 font-medium text-slate-700"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2.5 ml-1">Fecha del Partido</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2.5 ml-1">Estado del Partido</label>
                     <div className="relative">
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
-                      <input
-                        type="date"
-                        required
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-slate-50/50 font-medium text-slate-700"
-                      />
+                      <Activity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
+                      <select
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-slate-50/50 font-medium text-slate-700 appearance-none"
+                      >
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Ganado">Ganado</option>
+                        <option value="Perdido">Perdido</option>
+                      </select>
                     </div>
                   </div>
 
@@ -517,10 +577,10 @@ export default function App() {
                 </div>
 
                 <div className="pt-6 flex gap-3">
-                  {editingMatchId && (
+                  {editingMatchId !== null && (
                     <button
                       type="button"
-                      onClick={() => editingMatchId && handleDelete(editingMatchId)}
+                      onClick={() => editingMatchId !== null && handleDelete(editingMatchId)}
                       className="flex-1 bg-red-50 text-red-600 py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest hover:bg-red-100 transition-all active:scale-[0.98]"
                     >
                       Eliminar

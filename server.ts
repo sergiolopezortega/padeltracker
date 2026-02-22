@@ -48,7 +48,7 @@ async function startServer() {
 
   app.put("/api/matches/:id", async (req, res) => {
     const { id } = req.params;
-    const { date, club, team, result } = req.body;
+    const { date, time, club, team, result, status } = req.body;
     if (!date || !club || !team) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -56,7 +56,7 @@ async function startServer() {
     try {
       const { data, error } = await supabase
         .from("matches")
-        .update({ date, club, team, result })
+        .update({ date, time, club, team, result, status })
         .eq("id", id)
         .select();
 
@@ -69,7 +69,7 @@ async function startServer() {
   });
 
   app.post("/api/matches", async (req, res) => {
-    const { date, club, team, result } = req.body;
+    const { date, time, club, team, result, status } = req.body;
     if (!date || !club || !team) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -77,7 +77,7 @@ async function startServer() {
     try {
       const { data, error } = await supabase
         .from("matches")
-        .insert([{ date, club, team, result }])
+        .insert([{ date, time, club, team, result, status }])
         .select();
 
       if (error) throw error;
