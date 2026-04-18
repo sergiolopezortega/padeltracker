@@ -28,12 +28,11 @@ export default function App() {
       if (!response.ok) throw new Error('Error al cargar datos');
       const data = await response.json();
       
-      // Sort by proximity to current time
-      const now = new Date();
+      // Sort by date and time descending (latest first)
       const sortedData = data.sort((a: any, b: any) => {
         const dateA = new Date(`${a.date}${a.time ? `T${a.time}` : 'T00:00'}`).getTime();
         const dateB = new Date(`${b.date}${b.time ? `T${b.time}` : 'T00:00'}`).getTime();
-        return Math.abs(dateA - now.getTime()) - Math.abs(dateB - now.getTime());
+        return dateB - dateA;
       });
 
       setMatches(sortedData);
