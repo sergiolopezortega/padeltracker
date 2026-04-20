@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Match } from './types';
 
@@ -10,6 +10,7 @@ export default function App() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [editingMatchId, setEditingMatchId] = useState<number | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Match>({
@@ -27,15 +28,7 @@ export default function App() {
       const response = await fetch('/api/matches');
       if (!response.ok) throw new Error('Error al cargar datos');
       const data = await response.json();
-      
-      // Sort by date and time descending (latest first)
-      const sortedData = data.sort((a: any, b: any) => {
-        const dateA = new Date(`${a.date}${a.time ? `T${a.time}` : 'T00:00'}`).getTime();
-        const dateB = new Date(`${b.date}${b.time ? `T${b.time}` : 'T00:00'}`).getTime();
-        return dateB - dateA;
-      });
-
-      setMatches(sortedData);
+      setMatches(data);
       setError(null);
     } catch (err) {
       setError('No se pudieron cargar los partidos. Por favor, intenta de nuevo.');
@@ -49,6 +42,32 @@ export default function App() {
     fetchMatches();
   }, []);
 
+  const nextMatchInfo = useMemo(() => {
+    if (matches.length === 0) return null;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const nextMatch = [...matches]
+      .filter(m => {
+        const matchDate = new Date(m.date + 'T00:00');
+        return matchDate >= today;
+      })
+      .sort((a, b) => new Date(a.date + 'T00:00').getTime() - new Date(b.date + 'T00:00').getTime())[0];
+    
+    if (!nextMatch) return null;
+    
+    const nextDate = new Date(nextMatch.date + 'T00:00');
+    const diffTime = nextDate.getTime() - today.getTime();
+    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return {
+      days,
+      club: nextMatch.club,
+      time: nextMatch.time
+    };
+  }, [matches]);
+
   const stats = useMemo(() => {
     const total = matches.length;
     const thisMonth = matches.filter(m => {
@@ -58,6 +77,14 @@ export default function App() {
     }).length;
     return { total, thisMonth };
   }, [matches]);
+
+  const sortedMatches = useMemo(() => {
+    return [...matches].sort((a, b) => {
+      const dateA = new Date(`${a.date}${a.time ? `T${a.time}` : 'T00:00'}`).getTime();
+      const dateB = new Date(`${b.date}${b.time ? `T${b.time}` : 'T00:00'}`).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+  }, [matches, sortOrder]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,6 +199,13 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-900">Liga Litoral - Mariza y Arancha</h1>
+              {nextMatchInfo !== null && (
+                <p className="text-xs font-semibold text-emerald-600 mt-0.5">
+                  {nextMatchInfo.days === 0 
+                    ? `Juegas hoy en ${nextMatchInfo.club}${nextMatchInfo.time ? ` a las ${nextMatchInfo.time}` : ''}`
+                    : `Quedan ${nextMatchInfo.days} días para el próximo partido`}
+                </p>
+              )}
             </div>
           </div>
           
@@ -236,10 +270,16 @@ export default function App() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                    <th 
+                      className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] cursor-pointer hover:bg-slate-100/50 transition-colors group/sort"
+                      onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    >
                       <div className="flex items-center gap-2">
                         <Calendar size={12} className="text-slate-300" />
                         Fecha / Hora
+                        <div className="flex flex-col ml-1 opacity-0 group-hover/sort:opacity-100 transition-opacity">
+                          {sortOrder === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+                        </div>
                       </div>
                     </th>
                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
@@ -263,7 +303,7 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {matches.map((match, idx) => (
+                  {sortedMatches.map((match, idx) => (
                     <motion.tr
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -293,7 +333,9 @@ export default function App() {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-sm font-semibold text-slate-600">{match.club}</span>
+                        <span className={`text-sm font-semibold ${match.club?.trim().toLowerCase() === 'pendiente' ? 'text-red-600' : 'text-slate-600'}`}>
+                          {match.club}
+                        </span>
                       </td>
                       <td className="px-6 py-5">
                         <span className="text-sm font-semibold text-slate-600">{match.team}</span>
