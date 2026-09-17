@@ -10,7 +10,7 @@ export default function App() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [editingMatchId, setEditingMatchId] = useState<number | null>(null);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Match>({
@@ -293,38 +293,38 @@ export default function App() {
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
                     <th 
-                      className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] cursor-pointer hover:bg-slate-100/50 transition-colors group/sort"
+                      className="px-6 py-5 text-[10px] font-black text-slate-900 uppercase tracking-[0.1em] cursor-pointer hover:bg-slate-100/50 transition-colors group/sort"
                       onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
                     >
                       <div className="flex items-center gap-2">
-                        <Calendar size={12} className="text-slate-300" />
+                        <Calendar size={12} className="text-slate-600" />
                         Fecha / Hora
-                        <div className="flex flex-col ml-1 opacity-0 group-hover/sort:opacity-100 transition-opacity">
-                          {sortOrder === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+                        <div className="flex flex-col ml-1 text-slate-900 transition-opacity">
+                          {sortOrder === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                         </div>
                       </div>
                     </th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-900 uppercase tracking-[0.1em]">
                       <div className="flex items-center gap-2">
-                        <MapPin size={12} className="text-slate-300" />
+                        <MapPin size={12} className="text-slate-600" />
                         Club
                       </div>
                     </th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-900 uppercase tracking-[0.1em]">
                       <div className="flex items-center gap-2">
-                        <Users size={12} className="text-slate-300" />
+                        <Users size={12} className="text-slate-600" />
                         Contrincantes
                       </div>
                     </th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-900 uppercase tracking-[0.1em]">
                       <div className="flex items-center gap-2">
-                        <CircleDot size={12} className="text-slate-300" />
+                        <CircleDot size={12} className="text-slate-600" />
                         Bolas
                       </div>
                     </th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-900 uppercase tracking-[0.1em]">
                       <div className="flex items-center gap-2">
-                        <Trophy size={12} className="text-slate-300" />
+                        <Trophy size={12} className="text-slate-600" />
                         Resultado / Estado
                       </div>
                     </th>

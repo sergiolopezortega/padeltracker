@@ -21,8 +21,8 @@ async function startServer() {
         .from("matches")
         .select("*")
         .gte("date", "2026-09-01")
-        .order("date", { ascending: false })
-        .order("time", { ascending: false });
+        .order("date", { ascending: true })
+        .order("time", { ascending: true });
 
       if (error) throw error;
       res.json(data);
