@@ -20,6 +20,7 @@ async function startServer() {
       const { data, error } = await supabase
         .from("matches")
         .select("*")
+        .gte("date", "2026-09-01")
         .order("date", { ascending: false })
         .order("time", { ascending: false });
 
@@ -49,20 +50,35 @@ async function startServer() {
 
   app.put("/api/matches/:id", async (req, res) => {
     const { id } = req.params;
-    const { date, time, club, team, result, status } = req.body;
+    const { date, time, club, team, result, status, bolas } = req.body;
     if (!date || !club || !team) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
-      const { data, error } = await supabase
+      const payload: any = { date, time, club, team, result, status };
+      if (bolas !== undefined) payload.bolas = bolas;
+
+      let { data, error } = await supabase
         .from("matches")
-        .update({ date, time, club, team, result, status })
+        .update(payload)
         .eq("id", parseInt(id))
         .select();
 
+      // If bolas column does not exist yet in Supabase table (PGRST204 or 42703), retry without it
+      if (error && ("bolas" in payload) && ((error as any).code === "PGRST204" || (error as any).code === "42703" || (error as any).message?.includes("bolas"))) {
+        delete payload.bolas;
+        const retry = await supabase
+          .from("matches")
+          .update(payload)
+          .eq("id", parseInt(id))
+          .select();
+        data = retry.data;
+        error = retry.error;
+      }
+
       if (error) throw error;
-      res.status(200).json(data[0]);
+      res.status(200).json({ ...data?.[0], bolas });
     } catch (error) {
       console.error("Update error:", error);
       res.status(500).json({ error: "Error al actualizar el partido" });
@@ -70,19 +86,33 @@ async function startServer() {
   });
 
   app.post("/api/matches", async (req, res) => {
-    const { date, time, club, team, result, status } = req.body;
+    const { date, time, club, team, result, status, bolas } = req.body;
     if (!date || !club || !team) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
-      const { data, error } = await supabase
+      const payload: any = { date, time, club, team, result, status };
+      if (bolas !== undefined) payload.bolas = bolas;
+
+      let { data, error } = await supabase
         .from("matches")
-        .insert([{ date, time, club, team, result, status }])
+        .insert([payload])
         .select();
 
+      // If bolas column does not exist yet in Supabase table (PGRST204 or 42703), retry without it
+      if (error && ("bolas" in payload) && ((error as any).code === "PGRST204" || (error as any).code === "42703" || (error as any).message?.includes("bolas"))) {
+        delete payload.bolas;
+        const retry = await supabase
+          .from("matches")
+          .insert([payload])
+          .select();
+        data = retry.data;
+        error = retry.error;
+      }
+
       if (error) throw error;
-      res.status(201).json(data[0]);
+      res.status(201).json({ ...data?.[0], bolas });
     } catch (error) {
       console.error("Insert error:", error);
       res.status(500).json({ error: "Failed to save match" });

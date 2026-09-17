@@ -6,4 +6,5 @@ export interface Match {
   team: string;
   result: string;
   status?: 'Pendiente' | 'Ganado' | 'Perdido';
+  bolas?: 'Nosotras' | 'Ellas' | '';
 }

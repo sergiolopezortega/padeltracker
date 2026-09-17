@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock, ChevronUp, ChevronDown, CircleDot } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Match } from './types';
 
@@ -20,6 +20,7 @@ export default function App() {
     team: '',
     result: '',
     status: 'Pendiente',
+    bolas: '',
   });
 
   const fetchMatches = async () => {
@@ -28,7 +29,18 @@ export default function App() {
       const response = await fetch('/api/matches');
       if (!response.ok) throw new Error('Error al cargar datos');
       const data = await response.json();
-      setMatches(data);
+
+      let localBolas: Record<string, string> = {};
+      try {
+        localBolas = JSON.parse(localStorage.getItem('matches_bolas') || '{}');
+      } catch (e) {}
+
+      const enriched = data.map((m: Match) => ({
+        ...m,
+        bolas: m.bolas || (m.id ? localBolas[m.id] : undefined) || localBolas[`${m.date}_${m.team}`] || '',
+      }));
+
+      setMatches(enriched);
       setError(null);
     } catch (err) {
       setError('No se pudieron cargar los partidos. Por favor, intenta de nuevo.');
@@ -98,6 +110,14 @@ export default function App() {
         body: JSON.stringify(formData),
       });
       if (response.ok) {
+        const saved = await response.json();
+        try {
+          const stored = JSON.parse(localStorage.getItem('matches_bolas') || '{}');
+          if (saved?.id) stored[saved.id] = formData.bolas;
+          stored[`${formData.date}_${formData.team}`] = formData.bolas;
+          localStorage.setItem('matches_bolas', JSON.stringify(stored));
+        } catch (e) {}
+
         handleCloseModal();
         fetchMatches();
       }
@@ -115,6 +135,7 @@ export default function App() {
       team: match.team,
       result: match.result || '',
       status: match.status || 'Pendiente',
+      bolas: match.bolas || '',
     });
     setIsModalOpen(true);
   };
@@ -129,6 +150,7 @@ export default function App() {
       team: '',
       result: '',
       status: 'Pendiente',
+      bolas: '',
     });
   };
 
@@ -296,6 +318,12 @@ export default function App() {
                     </th>
                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
                       <div className="flex items-center gap-2">
+                        <CircleDot size={12} className="text-slate-300" />
+                        Bolas
+                      </div>
+                    </th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                      <div className="flex items-center gap-2">
                         <Trophy size={12} className="text-slate-300" />
                         Resultado / Estado
                       </div>
@@ -339,6 +367,19 @@ export default function App() {
                       </td>
                       <td className="px-6 py-5">
                         <span className="text-sm font-semibold text-slate-600">{match.team}</span>
+                      </td>
+                      <td className="px-6 py-5">
+                        {match.bolas ? (
+                          <span className={`inline-flex items-center px-3 py-1 rounded-xl text-xs font-bold ${
+                            match.bolas === 'Nosotras'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                          }`}>
+                            {match.bolas}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-300 font-medium">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex flex-col gap-1.5">
@@ -612,6 +653,23 @@ export default function App() {
                         onChange={(e) => setFormData({ ...formData, team: e.target.value })}
                         className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-slate-50/50 font-medium text-slate-700"
                       />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2.5 ml-1">Bolas</label>
+                    <div className="relative">
+                      <CircleDot className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
+                      <select
+                        value={formData.bolas || ''}
+                        onChange={(e) => setFormData({ ...formData, bolas: e.target.value as any })}
+                        className="w-full pl-12 pr-10 py-4 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-slate-50/50 font-medium text-slate-700 appearance-none"
+                      >
+                        <option value="">Seleccionar quién lleva bolas</option>
+                        <option value="Nosotras">Nosotras</option>
+                        <option value="Ellas">Ellas</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                     </div>
                   </div>
 
