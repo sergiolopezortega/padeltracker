@@ -7,4 +7,6 @@ export interface Match {
   result: string;
   status?: 'Pendiente' | 'Ganado' | 'Perdido';
   bolas?: 'Nosotras' | 'Ellas' | '';
+  Direccion_Club?: string;
+  direccion_club?: string;
 }

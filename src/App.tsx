@@ -1,10 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock, ChevronUp, ChevronDown, CircleDot } from 'lucide-react';
+import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock, ChevronUp, ChevronDown, CircleDot, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Match } from './types';
 
+const DEFAULT_CLUBS = [
+  "Fantasy",
+  "Málaga Padel",
+  "GM",
+  "Vals Sport Cónsul",
+  "Vals Sport Teatinos",
+  "Oxygen"
+];
+
 export default function App() {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [clubsMap, setClubsMap] = useState<Record<string, string>>({});
+  const [clubsList, setClubsList] = useState<string[]>(DEFAULT_CLUBS);
+  const [clubSelect, setClubSelect] = useState<string>('');
+  const [customClub, setCustomClub] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -50,8 +63,44 @@ export default function App() {
     }
   };
 
+  const fetchClubs = async () => {
+    try {
+      const response = await fetch('/api/clubs');
+      if (response.ok) {
+        const data = await response.json();
+        setClubsMap(data);
+        const keys = Object.keys(data);
+        if (keys.length > 0) {
+          setClubsList(keys);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching clubs:', err);
+    }
+  };
+
+  const getDirectionsUrl = (match: Match) => {
+    const rawClub = match.club?.trim();
+    if (!rawClub || rawClub.toLowerCase() === 'pendiente') return null;
+
+    let address = match.Direccion_Club || match.direccion_club || clubsMap[rawClub];
+    if (!address) {
+      const lower = rawClub.toLowerCase();
+      for (const [k, v] of Object.entries(clubsMap)) {
+        if (k.toLowerCase() === lower) {
+          address = v;
+          break;
+        }
+      }
+    }
+
+    const destination = address || rawClub;
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
+  };
+
   useEffect(() => {
     fetchMatches();
+    fetchClubs();
   }, []);
 
   const nextMatchInfo = useMemo(() => {
@@ -126,8 +175,46 @@ export default function App() {
     }
   };
 
+  const handleOpenNewMatch = () => {
+    setEditingMatchId(null);
+    setClubSelect('');
+    setCustomClub('');
+    setFormData({
+      date: new Date().toISOString().split('T')[0],
+      time: '',
+      club: '',
+      team: '',
+      result: '',
+      status: 'Pendiente',
+      bolas: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleClubSelectChange = (value: string) => {
+    setClubSelect(value);
+    if (value === 'Otros') {
+      setFormData(prev => ({ ...prev, club: customClub }));
+    } else {
+      setFormData(prev => ({ ...prev, club: value }));
+    }
+  };
+
+  const handleCustomClubChange = (value: string) => {
+    setCustomClub(value);
+    setFormData(prev => ({ ...prev, club: value }));
+  };
+
   const handleEdit = (match: Match) => {
     setEditingMatchId(match.id !== undefined ? match.id : null);
+    const isKnown = clubsList.includes(match.club);
+    if (isKnown) {
+      setClubSelect(match.club);
+      setCustomClub('');
+    } else {
+      setClubSelect(match.club ? 'Otros' : '');
+      setCustomClub(match.club || '');
+    }
     setFormData({
       date: match.date,
       time: match.time || '',
@@ -143,6 +230,8 @@ export default function App() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingMatchId(null);
+    setClubSelect('');
+    setCustomClub('');
     setFormData({
       date: new Date().toISOString().split('T')[0],
       time: '',
@@ -249,7 +338,7 @@ export default function App() {
               <BarChart3 size={20} />
             </button>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleOpenNewMatch}
               className="bg-slate-900 text-white p-3 rounded-xl font-semibold text-sm flex items-center justify-center hover:bg-slate-800 transition-all active:scale-95 shadow-sm ml-auto"
               title="Nuevo Partido"
               aria-label="Nuevo Partido"
@@ -280,7 +369,7 @@ export default function App() {
             <h3 className="text-xl font-bold text-slate-900">¿Aún no has jugado?</h3>
             <p className="text-slate-500 mt-2 max-w-xs mx-auto">Registra tus partidos de competición para llevar un control detallado de tu temporada.</p>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleOpenNewMatch}
               className="mt-8 bg-emerald-50 text-emerald-700 px-8 py-3 rounded-2xl font-bold hover:bg-emerald-100 transition-colors"
             >
               Añadir mi primer partido
@@ -361,9 +450,25 @@ export default function App() {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <span className={`text-sm font-semibold ${match.club?.trim().toLowerCase() === 'pendiente' ? 'text-red-600' : 'text-slate-600'}`}>
-                          {match.club}
-                        </span>
+                        {getDirectionsUrl(match) ? (
+                          <a
+                            href={getDirectionsUrl(match)!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 hover:text-emerald-600 transition-colors group/club cursor-pointer"
+                            title={`Cómo llegar a ${match.club} en Google Maps (${match.Direccion_Club || match.direccion_club || clubsMap[match.club] || match.club})`}
+                          >
+                            <span className="group-hover/club:underline underline-offset-2">
+                              {match.club}
+                            </span>
+                            <Navigation size={12} className="text-slate-400 group-hover/club:text-emerald-600 transition-colors shrink-0" />
+                          </a>
+                        ) : (
+                          <span className={`text-sm font-semibold ${match.club?.trim().toLowerCase() === 'pendiente' ? 'text-red-600' : 'text-slate-600'}`}>
+                            {match.club}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-5">
                         <span className="text-sm font-semibold text-slate-600">{match.team}</span>
@@ -630,15 +735,40 @@ export default function App() {
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2.5 ml-1">Club / Instalación</label>
                     <div className="relative">
                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
-                      <input
-                        type="text"
+                      <select
                         required
-                        placeholder="Ej. Padel Indoor Center"
-                        value={formData.club}
-                        onChange={(e) => setFormData({ ...formData, club: e.target.value })}
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-slate-50/50 font-medium text-slate-700"
-                      />
+                        value={clubSelect}
+                        onChange={(e) => handleClubSelectChange(e.target.value)}
+                        className="w-full pl-12 pr-10 py-4 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-slate-50/50 font-medium text-slate-700 appearance-none"
+                      >
+                        <option value="">Seleccionar Club...</option>
+                        {clubsList.map((clubName) => (
+                          <option key={clubName} value={clubName}>
+                            {clubName}
+                          </option>
+                        ))}
+                        <option value="Otros">Otros</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                     </div>
+
+                    {clubSelect === 'Otros' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-3 relative"
+                      >
+                        <input
+                          type="text"
+                          required
+                          placeholder="Escribe el nombre del club o instalación..."
+                          value={customClub}
+                          onChange={(e) => handleCustomClubChange(e.target.value)}
+                          className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all bg-white font-medium text-slate-700 placeholder:text-slate-400 text-sm shadow-sm"
+                          autoFocus
+                        />
+                      </motion.div>
+                    )}
                   </div>
 
                   <div>
