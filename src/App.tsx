@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock, ChevronUp, ChevronDown, CircleDot, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Match } from './types';
+import { PWAInstallButton } from './components/PWAInstallButton';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 const DEFAULT_CLUBS = [
   "Fantasy",
@@ -300,7 +302,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-emerald-100">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-emerald-100 pb-12">
+      <OfflineIndicator />
+
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 backdrop-blur-md bg-white/80">
         <div className="w-full px-4 py-5 space-y-5">
@@ -337,6 +341,7 @@ export default function App() {
             >
               <BarChart3 size={20} />
             </button>
+            <PWAInstallButton />
             <button
               onClick={handleOpenNewMatch}
               className="bg-slate-900 text-white p-3 rounded-xl font-semibold text-sm flex items-center justify-center hover:bg-slate-800 transition-all active:scale-95 shadow-sm ml-auto"

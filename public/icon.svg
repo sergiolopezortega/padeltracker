@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#047857" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background with subtle squircle shape -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+
+  <!-- Subtle inner border -->
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="#34d399" stroke-width="4" stroke-opacity="0.4" />
+
+  <!-- Central Trophy / Padel Graphic with shadow -->
+  <g filter="url(#shadow)" transform="translate(0, -6)">
+    <!-- Main Trophy Cup -->
+    <path d="M192 144 H320 V256 C320 291 291 320 256 320 C221 320 192 291 192 256 Z" fill="url(#metal)" />
+    
+    <!-- Trophy Handles -->
+    <path d="M192 168 H152 C134 168 120 182 120 200 C120 226 142 248 168 248 H192" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M320 168 H360 C378 168 392 182 392 200 C392 226 370 248 344 248 H320" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Trophy Stem and Base -->
+    <path d="M244 320 H268 V376 H244 Z" fill="#e2e8f0" />
+    <rect x="184" y="376" width="144" height="28" rx="8" fill="url(#metal)" />
+    
+    <!-- Padel Ball Accent -->
+    <circle cx="256" cy="220" r="32" fill="#facc15" stroke="#ca8a04" stroke-width="3" />
+    <path d="M236 200 C246 210 246 230 236 240" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+    <path d="M276 200 C266 210 266 230 276 240" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+
+    <!-- Star on Base -->
+    <polygon points="256,382 260,391 270,392 262,398 265,408 256,402 247,408 250,398 242,392 252,391" fill="#facc15" />
+  </g>
+</svg>

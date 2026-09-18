@@ -1,5 +1,8 @@
 {
   "name": "Padel Match Tracker",
-  "description": "Una aplicación para llevar el registro de tus partidos de pádel, incluyendo club, pareja y resultados.",
-  "requestFramePermissions": []
+  "description": "Aplicación para el seguimiento y gestión de partidos de pádel en la Liga Litoral (Mariza y Arancha).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
