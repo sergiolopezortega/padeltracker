@@ -11,7 +11,8 @@ const DEFAULT_CLUBS = [
   "GM",
   "Vals Sport Cónsul",
   "Vals Sport Teatinos",
-  "Oxygen"
+  "Oxygen",
+  "Mariza Urba"
 ];
 
 export default function App() {
@@ -189,6 +190,7 @@ export default function App() {
   };
 
   const handleOpenNewMatch = () => {
+    fetchClubs();
     setEditingMatchId(null);
     setClubSelect('');
     setCustomClub('');
@@ -229,10 +231,11 @@ export default function App() {
   };
 
   const handleEdit = (match: Match) => {
+    fetchClubs();
     setEditingMatchId(match.id !== undefined ? match.id : null);
-    const isKnown = clubsList.includes(match.club);
-    if (isKnown) {
-      setClubSelect(match.club);
+    const knownClub = clubsList.find(c => c.toLowerCase().trim() === (match.club || '').toLowerCase().trim());
+    if (knownClub) {
+      setClubSelect(knownClub);
       setCustomClub('');
     } else {
       setClubSelect(match.club ? 'Otros' : '');

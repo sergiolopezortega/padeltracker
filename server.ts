@@ -8,27 +8,49 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper to look up club address from clubs.json
-function getClubAddress(clubName: string): string | null {
-  if (!clubName) return null;
+// Helper to load and parse clubs.json robustly
+function loadClubsDict(): Record<string, string> {
   try {
     const clubsFilePath = path.join(process.cwd(), "clubs.json");
-    if (!fs.existsSync(clubsFilePath)) return null;
+    if (!fs.existsSync(clubsFilePath)) return {};
     const content = fs.readFileSync(clubsFilePath, "utf-8");
-    const clubsMap: Record<string, string> = JSON.parse(content);
 
-    // Direct exact match
-    if (clubsMap[clubName]) return clubsMap[clubName];
-
-    // Case-insensitive / trimmed match
-    const normalized = clubName.trim().toLowerCase();
-    for (const [key, address] of Object.entries(clubsMap)) {
-      if (key.trim().toLowerCase() === normalized) {
-        return address;
+    try {
+      return JSON.parse(content);
+    } catch (parseErr) {
+      // Fallback line-by-line parser for slightly malformed JSON (e.g., missing commas)
+      console.warn("Standard JSON.parse failed on clubs.json, using tolerant parser:", parseErr);
+      const clubs: Record<string, string> = {};
+      const lines = content.split("\n");
+      for (const line of lines) {
+        const trimmed = line.trim().replace(/,$/, "");
+        const match = trimmed.match(/^"([^"]+)"\s*:\s*"([^"]*)"/);
+        if (match) {
+          clubs[match[1]] = match[2];
+        }
       }
+      return clubs;
     }
   } catch (err) {
     console.error("Error reading clubs.json:", err);
+    return {};
+  }
+}
+
+// Helper to look up club address from clubs.json
+function getClubAddress(clubName: string): string | null {
+  if (!clubName) return null;
+  const clubsMap = loadClubsDict();
+
+  // Direct exact match
+  if (clubsMap[clubName]) return clubsMap[clubName];
+
+  // Case-insensitive / trimmed match
+  const normalized = clubName.trim().toLowerCase();
+  for (const [key, address] of Object.entries(clubsMap)) {
+    if (key.trim().toLowerCase() === normalized) {
+      return address;
+    }
   }
   return null;
 }
@@ -152,12 +174,8 @@ async function startServer() {
 
   app.get("/api/clubs", (req, res) => {
     try {
-      const clubsFilePath = path.join(process.cwd(), "clubs.json");
-      if (fs.existsSync(clubsFilePath)) {
-        const content = fs.readFileSync(clubsFilePath, "utf-8");
-        return res.json(JSON.parse(content));
-      }
-      res.json({});
+      const clubs = loadClubsDict();
+      res.json(clubs);
     } catch (err) {
       console.error("Error reading clubs.json:", err);
       res.status(500).json({ error: "Error reading clubs file" });
