@@ -85,6 +85,13 @@ async function saveMatchWithRetry(action: "insert" | "update", initialPayload: a
     result = await execute(payload);
   }
 
+  // If updating and Direccion_Club was explicitly set to null, also ensure lowercase direccion_club is nullified if it exists
+  if (!result.error && action === "update" && id && ("Direccion_Club" in initialPayload) && initialPayload["Direccion_Club"] === null) {
+    try {
+      await supabase.from("matches").update({ direccion_club: null }).eq("id", id);
+    } catch (_) {}
+  }
+
   return result;
 }
 
@@ -107,10 +114,18 @@ async function startServer() {
 
       if (error) throw error;
 
-      const enriched = (data || []).map((m: any) => ({
-        ...m,
-        Direccion_Club: m.Direccion_Club || m.direccion_club || getClubAddress(m.club) || undefined
-      }));
+      const enriched = (data || []).map((m: any) => {
+        const isOther = m.club?.trim().toLowerCase() === "otros";
+        const address = isOther
+          ? undefined
+          : (getClubAddress(m.club) || m.Direccion_Club || m.direccion_club || undefined);
+
+        return {
+          ...m,
+          Direccion_Club: address,
+          direccion_club: address,
+        };
+      });
 
       res.json(enriched);
     } catch (error) {
@@ -151,7 +166,7 @@ async function startServer() {
 
   app.put("/api/matches/:id", async (req, res) => {
     const { id } = req.params;
-    const { date, time, club, team, result, status, bolas } = req.body;
+    const { date, time, club, team, result, status, bolas, clubSelect, isOtros } = req.body;
     if (!date || !club || !team) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -160,16 +175,32 @@ async function startServer() {
       const payload: any = { date, time, club, team, result, status };
       if (bolas !== undefined) payload.bolas = bolas;
 
-      // Check if club is in clubs.json
-      const clubAddress = getClubAddress(club);
-      if (clubAddress) {
-        payload["Direccion_Club"] = clubAddress;
+      // Check if club is 'Otros' or selected as 'Otros'
+      const isOtherClub = isOtros === true || clubSelect === "Otros" || club?.trim().toLowerCase() === "otros";
+
+      if (isOtherClub) {
+        // En los updates, en caso que el valor de club sea Otros se debe eliminar el campo dirección por si previamente se había añadido alguna direccion
+        payload["Direccion_Club"] = null;
+      } else {
+        const clubAddress = getClubAddress(club);
+        if (clubAddress) {
+          payload["Direccion_Club"] = clubAddress;
+        } else {
+          // Si el club no está en clubs.json, también se vacía cualquier dirección previa
+          payload["Direccion_Club"] = null;
+        }
       }
 
       const { data, error } = await saveMatchWithRetry("update", payload, parseInt(id));
 
       if (error) throw error;
-      res.status(200).json({ ...data?.[0], bolas, Direccion_Club: clubAddress || undefined });
+      const finalAddress = isOtherClub ? undefined : (getClubAddress(club) || undefined);
+      res.status(200).json({
+        ...data?.[0],
+        bolas,
+        Direccion_Club: finalAddress,
+        direccion_club: finalAddress,
+      });
     } catch (error) {
       console.error("Update error:", error);
       res.status(500).json({ error: "Error al actualizar el partido" });
@@ -177,7 +208,7 @@ async function startServer() {
   });
 
   app.post("/api/matches", async (req, res) => {
-    const { date, time, club, team, result, status, bolas } = req.body;
+    const { date, time, club, team, result, status, bolas, clubSelect, isOtros } = req.body;
     if (!date || !club || !team) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -186,10 +217,12 @@ async function startServer() {
       const payload: any = { date, time, club, team, result, status };
       if (bolas !== undefined) payload.bolas = bolas;
 
-      // Check if club is in clubs.json
-      const clubAddress = getClubAddress(club);
+      const isOtherClub = isOtros === true || clubSelect === "Otros" || club?.trim().toLowerCase() === "otros";
+      const clubAddress = isOtherClub ? null : getClubAddress(club);
       if (clubAddress) {
         payload["Direccion_Club"] = clubAddress;
+      } else {
+        payload["Direccion_Club"] = null;
       }
 
       const { data, error } = await saveMatchWithRetry("insert", payload);

@@ -83,7 +83,7 @@ export default function App() {
 
   const getDirectionsUrl = (match: Match) => {
     const rawClub = match.club?.trim();
-    if (!rawClub || rawClub.toLowerCase() === 'pendiente') return null;
+    if (!rawClub || rawClub.toLowerCase() === 'pendiente' || rawClub.toLowerCase() === 'otros') return null;
 
     let address = match.Direccion_Club || match.direccion_club || clubsMap[rawClub];
     if (!address) {
@@ -154,11 +154,22 @@ export default function App() {
     try {
       const url = editingMatchId ? `/api/matches/${editingMatchId}` : '/api/matches';
       const method = editingMatchId ? 'PUT' : 'POST';
-      
+
+      const finalClub = clubSelect === 'Otros' ? (customClub.trim() || 'Otros') : formData.club;
+      const isOtros = clubSelect === 'Otros' || finalClub.trim().toLowerCase() === 'otros';
+
+      const payloadToSend = {
+        ...formData,
+        club: finalClub,
+        clubSelect,
+        isOtros,
+        Direccion_Club: isOtros ? null : formData.Direccion_Club,
+      };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payloadToSend),
       });
       if (response.ok) {
         const saved = await response.json();
@@ -196,7 +207,12 @@ export default function App() {
   const handleClubSelectChange = (value: string) => {
     setClubSelect(value);
     if (value === 'Otros') {
-      setFormData(prev => ({ ...prev, club: customClub }));
+      setFormData(prev => ({
+        ...prev,
+        club: customClub || 'Otros',
+        Direccion_Club: undefined,
+        direccion_club: undefined,
+      }));
     } else {
       setFormData(prev => ({ ...prev, club: value }));
     }
@@ -204,7 +220,12 @@ export default function App() {
 
   const handleCustomClubChange = (value: string) => {
     setCustomClub(value);
-    setFormData(prev => ({ ...prev, club: value }));
+    setFormData(prev => ({
+      ...prev,
+      club: value,
+      Direccion_Club: undefined,
+      direccion_club: undefined,
+    }));
   };
 
   const handleEdit = (match: Match) => {
