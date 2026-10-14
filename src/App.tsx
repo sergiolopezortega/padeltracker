@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock, ChevronUp, ChevronDown, CircleDot, Navigation } from 'lucide-react';
+import { Plus, Trophy, MapPin, Users, Calendar, X, Trash2, TrendingUp, Activity, Edit3, BarChart3, ChevronLeft, ChevronRight, Clock, ChevronUp, ChevronDown, CircleDot, Navigation, Bell, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Match } from './types';
 import { PWAInstallButton } from './components/PWAInstallButton';
@@ -24,6 +24,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [editingMatchId, setEditingMatchId] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -350,6 +351,18 @@ export default function App() {
           
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             <button
+              onClick={() => setIsVideoModalOpen(true)}
+              className="relative bg-amber-50 text-amber-700 p-3 rounded-xl font-semibold text-sm flex items-center justify-center hover:bg-amber-100 border border-amber-200 transition-all active:scale-95 shadow-sm"
+              title="Mensaje de Bea"
+              aria-label="Mensaje de Bea"
+            >
+              <Bell size={20} className="text-amber-600" />
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+              </span>
+            </button>
+            <button
               onClick={() => setIsCalendarOpen(true)}
               className="bg-white text-slate-600 p-3 rounded-xl font-semibold text-sm flex items-center justify-center hover:bg-slate-50 border border-slate-200 transition-all active:scale-95 shadow-sm"
               title="Calendario"
@@ -377,6 +390,42 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* Notification banner: Mensaje de Bea */}
+      <div className="w-full px-4 pt-4 pb-1">
+        <button
+          type="button"
+          onClick={() => setIsVideoModalOpen(true)}
+          className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50/60 to-amber-50 border border-amber-200/90 hover:border-amber-300 transition-all shadow-sm hover:shadow active:scale-[0.99] text-left group"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="relative p-2.5 rounded-xl bg-amber-500 text-white shadow-md shadow-amber-400/30 group-hover:scale-105 transition-transform flex-shrink-0">
+              <Bell className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+              </span>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight truncate">
+                  Mensaje de Bea
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full flex-shrink-0">
+                  Nuevo
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium truncate">
+                Toca aquí para reproducir el vídeo
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-amber-800 font-bold text-xs sm:text-sm pl-2 flex-shrink-0 bg-white/80 py-1.5 px-3 rounded-xl border border-amber-200/80 shadow-xs group-hover:bg-amber-500 group-hover:text-white transition-all">
+            <Play size={14} className="fill-current" />
+            <span>Ver vídeo</span>
+          </div>
+        </button>
+      </div>
 
       <main className="w-full py-8">
         {error && (
@@ -865,6 +914,66 @@ export default function App() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bea Video Modal */}
+      <AnimatePresence>
+        {isVideoModalOpen && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-md"
+            onClick={() => setIsVideoModalOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-white/20 flex flex-col max-h-[90vh]"
+            >
+              <div className="px-6 sm:px-8 pt-7 pb-5 flex justify-between items-center bg-slate-50/80 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500 text-white shadow-md shadow-amber-400/30">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900">Mensaje de Bea</h2>
+                    <p className="text-slate-500 text-xs font-medium">Vídeo de Bea (Bea2.mp4)</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsVideoModalOpen(false)}
+                  className="p-2.5 hover:bg-white rounded-2xl transition-all shadow-sm border border-transparent hover:border-slate-100"
+                  aria-label="Cerrar"
+                >
+                  <X size={20} className="text-slate-400" />
+                </button>
+              </div>
+
+              <div className="p-6 sm:p-8 space-y-5 overflow-y-auto">
+                <div className="rounded-2xl overflow-hidden bg-black shadow-inner border border-slate-900 relative aspect-video flex items-center justify-center">
+                  <video
+                    src="/Bea2.mp4"
+                    controls
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-contain"
+                  >
+                    Tu navegador no soporta la reproducción del vídeo.
+                  </video>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setIsVideoModalOpen(false)}
+                    className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-[0.98]"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
